@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node scripts/verify-site.js",
+    "build": "node scripts/build-site.js",
     "dev": "node scripts/local-server.js"
   },
   "devDependencies": {}

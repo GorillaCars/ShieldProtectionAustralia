@@ -288,7 +288,7 @@ h3 {
   background:
     linear-gradient(90deg, rgba(5, 5, 5, 0.94), rgba(5, 5, 5, 0.62)),
     linear-gradient(90deg, rgba(48, 144, 24, 0.2), rgba(5, 5, 5, 0) 42%),
-    url("/assets/forms-bg.png?v=20260717-cachefix") center / cover;
+    url("/assets/forms-bg.png?v=20260717-deploy2") center / cover;
 }
 
 .forms-hero h1 {

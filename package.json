@@ -1,0 +1,10 @@
+{
+  "name": "shield-protection-australia",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/verify-site.js",
+    "dev": "node scripts/local-server.js"
+  },
+  "devDependencies": {}
+}

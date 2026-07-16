@@ -334,7 +334,7 @@ h3 {
   padding: 148px clamp(22px, 7vw, 96px) 56px;
   background:
     linear-gradient(90deg, rgba(5, 5, 5, 0.94), rgba(5, 5, 5, 0.62)),
-    url("/assets/forms-bg.png") center / cover;
+    url("/assets/forms-bg.png?v=20260717-cachefix") center / cover;
 }
 
 .forms-hero h1 {

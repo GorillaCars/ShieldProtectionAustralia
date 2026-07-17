@@ -27,6 +27,15 @@
   const detailFiles = document.querySelector("[data-policy-detail-files]");
   const detailFileCount = document.querySelector("[data-policy-detail-file-count]");
   const detailCloseButtons = document.querySelectorAll("[data-policy-detail-close]");
+  const adminUploadForm = document.querySelector("[data-admin-upload-form]");
+  const adminUploadStatus = document.querySelector("[data-admin-upload-status]");
+  const allowedTypes = new Set([
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/heic",
+    "image/heif"
+  ]);
   let supabase;
   let policies = [];
   let fileMap = new Map();
@@ -69,6 +78,10 @@
 
   function isPreviewableImage(file) {
     return String(file.content_type || "").startsWith("image/");
+  }
+
+  function cleanFileName(name) {
+    return name.replace(/[^a-z0-9._-]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "document";
   }
 
   function setBar(element, value) {
@@ -218,6 +231,8 @@
     activePolicyId = "";
     detailFiles.innerHTML = "";
     setStatus(detailStatus, "", "");
+    setStatus(adminUploadStatus, "", "");
+    adminUploadForm.reset();
   }
 
   async function loadPolicies() {
@@ -360,6 +375,65 @@
       }
     } catch (error) {
       setStatus(detailStatus, error.message || "Policy could not be saved.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  adminUploadForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = adminUploadForm.querySelector("button[type='submit']");
+    const file = new FormData(adminUploadForm).get("file");
+
+    if (!activePolicyId) {
+      setStatus(adminUploadStatus, "Open a policy before uploading.", "error");
+      return;
+    }
+
+    if (!(file instanceof File) || file.size === 0) {
+      setStatus(adminUploadStatus, "Choose a file to upload.", "error");
+      return;
+    }
+
+    if (!allowedTypes.has(file.type)) {
+      setStatus(adminUploadStatus, "Upload a PDF, JPG, PNG, HEIC or HEIF file.", "error");
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      setStatus(adminUploadStatus, "Upload a file smaller than 15 MB.", "error");
+      return;
+    }
+
+    button.disabled = true;
+    setStatus(adminUploadStatus, "Uploading...", "");
+    try {
+      const filePath = `admin/${activePolicyId}/${Date.now()}-${cleanFileName(file.name)}`;
+      const { error: uploadError } = await supabase.storage
+        .from("policy-documents")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          contentType: file.type,
+          upsert: false
+        });
+      if (uploadError) throw uploadError;
+
+      const { error: recordError } = await supabase.from("policy_files").insert({
+        policy_id: activePolicyId,
+        file_name: file.name,
+        file_path: filePath,
+        content_type: file.type,
+        file_size: file.size,
+        uploaded_by: "admin"
+      });
+      if (recordError) throw recordError;
+
+      adminUploadForm.reset();
+      setStatus(adminUploadStatus, "Uploaded.", "success");
+      await loadPolicies();
+      await renderDetailFiles(activePolicyId);
+    } catch (error) {
+      setStatus(adminUploadStatus, error.message || "Upload failed.", "error");
     } finally {
       button.disabled = false;
     }

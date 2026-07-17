@@ -613,7 +613,8 @@ body.modal-open {
 
 .upload-form,
 .admin-login-form,
-.policy-editor form {
+.policy-editor form,
+.admin-upload-form {
   display: grid;
   gap: 16px;
   margin-top: 24px;
@@ -621,7 +622,8 @@ body.modal-open {
 
 .upload-form label,
 .admin-login-form label,
-.policy-editor label {
+.policy-editor label,
+.admin-upload-form label {
   display: grid;
   gap: 8px;
   color: var(--muted);
@@ -633,6 +635,7 @@ body.modal-open {
 .upload-form input,
 .admin-login-form input,
 .policy-editor input,
+.admin-upload-form input,
 .table-search {
   width: 100%;
   min-height: 48px;
@@ -1104,6 +1107,20 @@ body.modal-open {
   color: var(--muted);
 }
 
+.admin-upload-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  margin-top: 0;
+  padding: 14px;
+  background: rgba(126, 217, 92, 0.055);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-upload-form .form-status {
+  grid-column: 1 / -1;
+}
+
 .attachment-list {
   display: grid;
   gap: 10px;
@@ -1191,7 +1208,8 @@ body.modal-open {
   .policy-editor form,
   .policy-summary,
   .policy-detail-form,
-  .attachment-card {
+  .attachment-card,
+  .admin-upload-form {
     grid-template-columns: 1fr;
   }
 

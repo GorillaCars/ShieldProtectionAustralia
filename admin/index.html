@@ -138,6 +138,14 @@
                 <h3>Attachments</h3>
                 <p data-policy-detail-file-count>No files uploaded.</p>
               </div>
+              <form class="admin-upload-form" data-admin-upload-form>
+                <label>
+                  <span>Add File</span>
+                  <input name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/heic,image/heif" required>
+                </label>
+                <button class="button primary" type="submit">Upload</button>
+                <p class="form-status" data-admin-upload-status></p>
+              </form>
               <div class="attachment-list" data-policy-detail-files></div>
             </div>
           </section>

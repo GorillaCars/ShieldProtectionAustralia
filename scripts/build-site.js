@@ -7,6 +7,7 @@ const root = process.cwd();
 const dist = path.join(root, "dist");
 const entries = [
   "index.html",
+  "about",
   "forms",
   "assets",
   "styles.css",

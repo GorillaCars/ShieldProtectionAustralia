@@ -3,6 +3,7 @@ const path = require("path");
 
 const required = [
   "index.html",
+  "about/index.html",
   "forms/index.html",
   "styles.css",
   "script.js",

@@ -110,6 +110,38 @@
             <div class="policy-table" data-policy-list></div>
           </section>
         </div>
+
+        <div class="policy-detail-modal" data-policy-detail-modal hidden>
+          <div class="policy-detail-backdrop" data-policy-detail-close></div>
+          <section class="policy-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="policy-detail-title">
+            <button class="upload-close" type="button" aria-label="Close policy details" data-policy-detail-close>&times;</button>
+            <p class="eyebrow">Policy Details</p>
+            <h2 id="policy-detail-title">Policy record</h2>
+            <form class="policy-detail-form" data-policy-detail-form>
+              <input type="hidden" name="id">
+              <label>
+                <span>Policy No.</span>
+                <input name="policy_no" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Customer Full Name</span>
+                <input name="customer_full_name" type="text" autocomplete="off" required>
+              </label>
+              <div class="admin-form-actions">
+                <button class="button primary" type="submit">Save Changes</button>
+                <button class="button ghost" type="button" data-policy-detail-close>Cancel</button>
+              </div>
+              <p class="form-status" data-policy-detail-status></p>
+            </form>
+            <div class="attachment-section">
+              <div>
+                <h3>Attachments</h3>
+                <p data-policy-detail-file-count>No files uploaded.</p>
+              </div>
+              <div class="attachment-list" data-policy-detail-files></div>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
 

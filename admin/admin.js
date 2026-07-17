@@ -21,9 +21,16 @@
   const fileBar = document.querySelector("[data-stat-file-bar]");
   const emptyBar = document.querySelector("[data-stat-empty-bar]");
   const uploadChart = document.querySelector("[data-upload-chart]");
+  const detailModal = document.querySelector("[data-policy-detail-modal]");
+  const detailForm = document.querySelector("[data-policy-detail-form]");
+  const detailStatus = document.querySelector("[data-policy-detail-status]");
+  const detailFiles = document.querySelector("[data-policy-detail-files]");
+  const detailFileCount = document.querySelector("[data-policy-detail-file-count]");
+  const detailCloseButtons = document.querySelectorAll("[data-policy-detail-close]");
   let supabase;
   let policies = [];
   let fileMap = new Map();
+  let activePolicyId = "";
 
   function setStatus(element, message, tone) {
     if (!element) return;
@@ -58,6 +65,10 @@
       unit += 1;
     }
     return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+  }
+
+  function isPreviewableImage(file) {
+    return String(file.content_type || "").startsWith("image/");
   }
 
   function setBar(element, value) {
@@ -121,23 +132,8 @@
 
     policyList.innerHTML = visible.map((policy) => {
       const files = fileMap.get(policy.id) || [];
-      const fileRows = files.length
-        ? files.map((file) => `
-            <div class="file-row">
-              <div>
-                <strong>${escapeHtml(file.file_name)}</strong>
-                <span>${formatBytes(file.file_size)} - ${new Date(file.created_at).toLocaleDateString()}</span>
-              </div>
-              <div class="file-actions">
-                <button type="button" data-download-file="${file.id}">Download</button>
-                <button type="button" data-delete-file="${file.id}">Delete</button>
-              </div>
-            </div>
-          `).join("")
-        : '<div class="empty-files">No files uploaded.</div>';
-
       return `
-        <article class="policy-row" data-policy-id="${policy.id}">
+        <article class="policy-row" data-policy-id="${policy.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(policy.policy_no)}">
           <div class="policy-summary">
             <div>
               <span>Policy No.</span>
@@ -152,14 +148,76 @@
               <strong>${files.length}</strong>
             </div>
             <div class="row-actions">
-              <button type="button" data-edit-policy="${policy.id}">Edit</button>
+              <span>Open</span>
             </div>
           </div>
-          <div class="policy-files">${fileRows}</div>
         </article>
       `;
     }).join("");
     renderStats();
+  }
+
+  async function getSignedUrl(file) {
+    const { data, error } = await supabase.storage.from("policy-documents").createSignedUrl(file.file_path, 120);
+    if (error) throw error;
+    return data.signedUrl;
+  }
+
+  async function renderDetailFiles(policyId) {
+    const files = fileMap.get(policyId) || [];
+    detailFileCount.textContent = files.length ? `${files.length} ${files.length === 1 ? "file" : "files"} uploaded` : "No files uploaded.";
+
+    if (!files.length) {
+      detailFiles.innerHTML = '<div class="empty-files">No attachments uploaded yet.</div>';
+      return;
+    }
+
+    detailFiles.innerHTML = '<div class="empty-files">Loading attachments...</div>';
+    try {
+      const rows = await Promise.all(files.map(async (file) => {
+        const signedUrl = await getSignedUrl(file);
+        const preview = isPreviewableImage(file)
+          ? `<img src="${signedUrl}" alt="">`
+          : '<span class="attachment-icon">PDF</span>';
+        return `
+          <article class="attachment-card">
+            <div class="attachment-preview">${preview}</div>
+            <div class="attachment-meta">
+              <strong>${escapeHtml(file.file_name)}</strong>
+              <span>${formatBytes(file.file_size)} - ${new Date(file.created_at).toLocaleDateString()}</span>
+            </div>
+            <div class="file-actions">
+              <a href="${signedUrl}" target="_blank" rel="noopener">Download</a>
+              <button type="button" data-delete-file="${file.id}">Delete</button>
+            </div>
+          </article>
+        `;
+      }));
+      detailFiles.innerHTML = rows.join("");
+    } catch (error) {
+      detailFiles.innerHTML = '<div class="empty-files">Attachments could not be loaded.</div>';
+    }
+  }
+
+  async function openDetail(policy) {
+    activePolicyId = policy.id;
+    detailForm.id.value = policy.id;
+    detailForm.policy_no.value = policy.policy_no;
+    detailForm.customer_full_name.value = policy.customer_full_name;
+    setStatus(detailStatus, "", "");
+    detailModal.hidden = false;
+    document.body.classList.add("modal-open");
+    await renderDetailFiles(policy.id);
+    detailForm.policy_no.focus();
+  }
+
+  function closeDetail() {
+    detailModal.hidden = true;
+    document.body.classList.remove("modal-open");
+    detailForm.reset();
+    activePolicyId = "";
+    detailFiles.innerHTML = "";
+    setStatus(detailStatus, "", "");
   }
 
   async function loadPolicies() {
@@ -239,6 +297,11 @@
   newPolicyButton.addEventListener("click", () => openEditor());
   cancelPolicyButton.addEventListener("click", closeEditor);
   searchInput.addEventListener("input", renderPolicies);
+  detailCloseButtons.forEach((button) => button.addEventListener("click", closeDetail));
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !detailModal.hidden) closeDetail();
+  });
 
   policyForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -270,49 +333,74 @@
     }
   });
 
+  detailForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = detailForm.querySelector("button[type='submit']");
+    const payload = {
+      policy_no: detailForm.policy_no.value.trim(),
+      customer_full_name: detailForm.customer_full_name.value.trim()
+    };
+
+    if (!payload.policy_no || !payload.customer_full_name) {
+      setStatus(detailStatus, "Policy number and customer name are required.", "error");
+      return;
+    }
+
+    button.disabled = true;
+    setStatus(detailStatus, "Saving...", "");
+    try {
+      const { error } = await supabase.from("policies").update(payload).eq("id", detailForm.id.value);
+      if (error) throw error;
+      setStatus(detailStatus, "Saved.", "success");
+      await loadPolicies();
+      const updatedPolicy = policies.find((item) => item.id === detailForm.id.value);
+      if (updatedPolicy) {
+        detailForm.policy_no.value = updatedPolicy.policy_no;
+        detailForm.customer_full_name.value = updatedPolicy.customer_full_name;
+      }
+    } catch (error) {
+      setStatus(detailStatus, error.message || "Policy could not be saved.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
   policyList.addEventListener("click", async (event) => {
+    const row = event.target.closest("[data-policy-id]");
+    if (!row) return;
+    const policy = policies.find((item) => item.id === row.dataset.policyId);
+    if (policy) await openDetail(policy);
+  });
+
+  policyList.addEventListener("keydown", async (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const row = event.target.closest("[data-policy-id]");
+    if (!row) return;
+    event.preventDefault();
+    const policy = policies.find((item) => item.id === row.dataset.policyId);
+    if (policy) await openDetail(policy);
+  });
+
+  detailFiles.addEventListener("click", async (event) => {
     const target = event.target.closest("button");
     if (!target) return;
 
-    const editId = target.dataset.editPolicy;
-    if (editId) {
-      const policy = policies.find((item) => item.id === editId);
-      if (policy) openEditor(policy);
-      return;
-    }
-
-    const downloadId = target.dataset.downloadFile;
-    if (downloadId) {
-      const file = [...fileMap.values()].flat().find((item) => item.id === downloadId);
-      if (!file) return;
-      target.disabled = true;
-      try {
-        const { data, error } = await supabase.storage.from("policy-documents").createSignedUrl(file.file_path, 120);
-        if (error) throw error;
-        window.open(data.signedUrl, "_blank", "noopener");
-      } catch (error) {
-        alert(error.message || "Could not create download link.");
-      } finally {
-        target.disabled = false;
-      }
-      return;
-    }
-
     const deleteId = target.dataset.deleteFile;
-    if (deleteId) {
-      const file = [...fileMap.values()].flat().find((item) => item.id === deleteId);
-      if (!file || !confirm(`Delete ${file.file_name}?`)) return;
-      target.disabled = true;
-      try {
-        const { error: storageError } = await supabase.storage.from("policy-documents").remove([file.file_path]);
-        if (storageError) throw storageError;
-        const { error: rowError } = await supabase.from("policy_files").delete().eq("id", file.id);
-        if (rowError) throw rowError;
-        await loadPolicies();
-      } catch (error) {
-        alert(error.message || "Could not delete file.");
-        target.disabled = false;
-      }
+    if (!deleteId) return;
+
+    const file = [...fileMap.values()].flat().find((item) => item.id === deleteId);
+    if (!file || !confirm(`Delete ${file.file_name}?`)) return;
+    target.disabled = true;
+    try {
+      const { error: storageError } = await supabase.storage.from("policy-documents").remove([file.file_path]);
+      if (storageError) throw storageError;
+      const { error: rowError } = await supabase.from("policy_files").delete().eq("id", file.id);
+      if (rowError) throw rowError;
+      await loadPolicies();
+      if (activePolicyId) await renderDetailFiles(activePolicyId);
+    } catch (error) {
+      alert(error.message || "Could not delete file.");
+      target.disabled = false;
     }
   });
 

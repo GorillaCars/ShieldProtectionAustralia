@@ -38,6 +38,23 @@
     return name.replace(/[^a-z0-9._-]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "document";
   }
 
+  function friendlyUploadError(error) {
+    const message = String(error?.message || "").toLowerCase();
+    if (message.includes("policy details") || message.includes("do not match")) {
+      return "Those details do not match a policy. Please check the policy number and full name exactly as written on your document.";
+    }
+    if (message.includes("row-level security") || message.includes("violates") || message.includes("permission")) {
+      return "We could not upload your document right now. Please try again, or contact Shield Protection Australia if it keeps happening.";
+    }
+    if (message.includes("invalid") || message.includes("expired")) {
+      return "This upload session expired. Please close the form and try again.";
+    }
+    if (message.includes("network") || message.includes("failed to fetch")) {
+      return "We could not connect. Please check your internet connection and try again.";
+    }
+    return "Upload failed. Please try again.";
+  }
+
   openButton.addEventListener("click", openModal);
   closeButtons.forEach((button) => button.addEventListener("click", closeModal));
   document.addEventListener("keydown", (event) => {
@@ -108,7 +125,8 @@
       setStatus("Upload received. Thank you.", "success");
       form.reset();
     } catch (error) {
-      setStatus(error.message || "Upload failed. Please try again.", "error");
+      console.warn("Document upload failed", error);
+      setStatus(friendlyUploadError(error), "error");
     } finally {
       submitButton.disabled = false;
     }

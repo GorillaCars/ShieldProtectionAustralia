@@ -38,6 +38,23 @@
     return name.replace(/[^a-z0-9._-]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "document";
   }
 
+  function getPublicUploadClient() {
+    if (!window.supabase || !window.supabase.createClient) {
+      throw new Error("Supabase client library is not loaded.");
+    }
+    return window.supabase.createClient(
+      window.ShieldSupabase.url,
+      window.ShieldSupabase.publishableKey,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      }
+    );
+  }
+
   function friendlyUploadError(error) {
     const message = String(error?.message || "").toLowerCase();
     if (message.includes("policy details") || message.includes("do not match")) {
@@ -88,7 +105,7 @@
     setStatus("Checking policy details...", "");
 
     try {
-      const supabase = window.getShieldSupabaseClient();
+      const supabase = getPublicUploadClient();
       const { data: intent, error: intentError } = await supabase.rpc("create_policy_upload_intent", {
         p_policy_no: policyNo,
         p_customer_full_name: fullName

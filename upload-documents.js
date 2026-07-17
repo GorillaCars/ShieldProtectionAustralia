@@ -58,7 +58,7 @@
   function friendlyUploadError(error) {
     const message = String(error?.message || "").toLowerCase();
     if (message.includes("policy details") || message.includes("do not match")) {
-      return "Those details do not match a policy. Please check the policy number and full name exactly as written on your document.";
+      return "Those details do not match a policy. Please check the stock number and full name exactly as written on your document.";
     }
     if (message.includes("row-level security") || message.includes("violates") || message.includes("permission")) {
       return "We could not upload your document right now. Please try again, or contact Shield Protection Australia if it keeps happening.";
@@ -112,7 +112,7 @@
       });
 
       if (intentError || !intent?.[0]?.upload_token) {
-        throw new Error("Those details do not match a policy. Please check the policy number and full name exactly as written on your document.");
+        throw new Error("Those details do not match a policy. Please check the stock number and full name exactly as written on your document.");
       }
 
       const token = intent[0].upload_token;

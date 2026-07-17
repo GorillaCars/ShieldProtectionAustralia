@@ -150,7 +150,7 @@
         <article class="policy-row" data-policy-id="${policy.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(policy.policy_no)}">
           <div class="policy-summary">
             <div>
-              <span>Policy No.</span>
+              <span>Stock Number</span>
               <strong>${escapeHtml(policy.policy_no)}</strong>
             </div>
             <div>
@@ -328,7 +328,7 @@
     };
 
     if (!payload.policy_no || !payload.customer_full_name) {
-      setStatus(policyStatus, "Policy number and customer name are required.", "error");
+      setStatus(policyStatus, "Stock number and customer name are required.", "error");
       return;
     }
 
@@ -358,7 +358,7 @@
     };
 
     if (!payload.policy_no || !payload.customer_full_name) {
-      setStatus(detailStatus, "Policy number and customer name are required.", "error");
+      setStatus(detailStatus, "Stock number and customer name are required.", "error");
       return;
     }
 
@@ -445,7 +445,7 @@
     const policy = policies.find((item) => item.id === activePolicyId);
     if (!policy) return;
 
-    const confirmed = confirm(`Are you sure you want to delete policy ${policy.policy_no}? This will also remove its uploaded attachments.`);
+    const confirmed = confirm(`Are you sure you want to delete the policy for stock number ${policy.policy_no}? This will also remove its uploaded attachments.`);
     if (!confirmed) return;
 
     deletePolicyButton.disabled = true;

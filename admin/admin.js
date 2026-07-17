@@ -13,6 +13,14 @@
   const policyList = document.querySelector("[data-policy-list]");
   const policyCount = document.querySelector("[data-policy-count]");
   const searchInput = document.querySelector("[data-policy-search]");
+  const statPolicies = document.querySelector("[data-stat-policies]");
+  const statFiles = document.querySelector("[data-stat-files]");
+  const statMonth = document.querySelector("[data-stat-month]");
+  const statEmpty = document.querySelector("[data-stat-empty]");
+  const policyBar = document.querySelector("[data-stat-policy-bar]");
+  const fileBar = document.querySelector("[data-stat-file-bar]");
+  const emptyBar = document.querySelector("[data-stat-empty-bar]");
+  const uploadChart = document.querySelector("[data-upload-chart]");
   let supabase;
   let policies = [];
   let fileMap = new Map();
@@ -29,6 +37,16 @@
     signoutButton.hidden = !isAdmin;
   }
 
+  function escapeHtml(value) {
+    return String(value || "").replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[character]));
+  }
+
   function formatBytes(bytes) {
     if (!bytes) return "Unknown size";
     const units = ["B", "KB", "MB", "GB"];
@@ -41,6 +59,51 @@
     return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
   }
 
+  function setBar(element, value) {
+    if (!element) return;
+    element.style.width = `${Math.max(6, Math.min(100, value))}%`;
+  }
+
+  function renderStats() {
+    const files = [...fileMap.values()].flat();
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const uploadsThisMonth = files.filter((file) => {
+      const date = new Date(file.created_at);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    }).length;
+    const policiesWithoutFiles = policies.filter((policy) => !(fileMap.get(policy.id) || []).length).length;
+    const maxValue = Math.max(policies.length, files.length, uploadsThisMonth, policiesWithoutFiles, 1);
+
+    statPolicies.textContent = policies.length;
+    statFiles.textContent = files.length;
+    statMonth.textContent = uploadsThisMonth;
+    statEmpty.textContent = policiesWithoutFiles;
+
+    setBar(policyBar, (policies.length / maxValue) * 100);
+    setBar(fileBar, (files.length / maxValue) * 100);
+    setBar(emptyBar, (policiesWithoutFiles / Math.max(policies.length, 1)) * 100);
+
+    const monthBuckets = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(currentYear, currentMonth - (5 - index), 1);
+      return {
+        label: date.toLocaleString("en-AU", { month: "short" }),
+        count: files.filter((file) => {
+          const fileDate = new Date(file.created_at);
+          return fileDate.getMonth() === date.getMonth() && fileDate.getFullYear() === date.getFullYear();
+        }).length
+      };
+    });
+    const peak = Math.max(...monthBuckets.map((item) => item.count), 1);
+    uploadChart.innerHTML = monthBuckets.map((item) => `
+      <span style="--bar-height: ${Math.max(12, (item.count / peak) * 100)}%" title="${item.label}: ${item.count}">
+        <i></i>
+        <b>${item.label}</b>
+      </span>
+    `).join("");
+  }
+
   function renderPolicies() {
     const query = (searchInput.value || "").trim().toLowerCase();
     const visible = policies.filter((policy) => {
@@ -51,6 +114,7 @@
 
     if (!visible.length) {
       policyList.innerHTML = '<div class="empty-state">No policies found.</div>';
+      renderStats();
       return;
     }
 
@@ -60,8 +124,8 @@
         ? files.map((file) => `
             <div class="file-row">
               <div>
-                <strong>${file.file_name}</strong>
-                <span>${formatBytes(file.file_size)} · ${new Date(file.created_at).toLocaleDateString()}</span>
+                <strong>${escapeHtml(file.file_name)}</strong>
+                <span>${formatBytes(file.file_size)} - ${new Date(file.created_at).toLocaleDateString()}</span>
               </div>
               <div class="file-actions">
                 <button type="button" data-download-file="${file.id}">Download</button>
@@ -76,11 +140,11 @@
           <div class="policy-summary">
             <div>
               <span>Policy No.</span>
-              <strong>${policy.policy_no}</strong>
+              <strong>${escapeHtml(policy.policy_no)}</strong>
             </div>
             <div>
               <span>Customer</span>
-              <strong>${policy.customer_full_name}</strong>
+              <strong>${escapeHtml(policy.customer_full_name)}</strong>
             </div>
             <div>
               <span>Files</span>
@@ -94,6 +158,7 @@
         </article>
       `;
     }).join("");
+    renderStats();
   }
 
   async function loadPolicies() {
@@ -112,6 +177,7 @@
       files.push(file);
       fileMap.set(file.policy_id, files);
     });
+    renderStats();
     renderPolicies();
   }
 

@@ -9,24 +9,16 @@
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body class="admin-body">
-    <main class="admin-shell">
-      <aside class="admin-sidebar">
+    <main>
+      <section class="admin-login-screen" data-admin-login>
         <a class="brand" href="/" aria-label="Shield Protection Australia home">
           <img src="/assets/logo-512.png" alt="">
           <span>Shield Protection Australia</span>
         </a>
-        <nav class="admin-side-nav">
-          <a href="/admin/" aria-current="page">Policies</a>
-          <a href="/">Website</a>
-          <a href="/forms/">Forms</a>
-        </nav>
-        <button class="button ghost admin-signout" type="button" data-admin-signout hidden>Sign Out</button>
-      </aside>
-
-      <section class="admin-main">
-        <div class="admin-login" data-admin-login>
+        <div class="admin-login-wrap">
           <p class="eyebrow">Admin</p>
           <h1>Policy dashboard</h1>
+          <p>Secure access for Shield Protection Australia policy records and customer uploads.</p>
           <form class="admin-card admin-login-form" data-login-form>
             <label>
               <span>Email</span>
@@ -40,15 +32,53 @@
             <p class="form-status" data-login-status></p>
           </form>
         </div>
+      </section>
 
-        <div class="admin-panel" data-admin-panel hidden>
-          <header class="admin-topbar">
+      <section class="admin-dashboard" data-admin-panel hidden>
+        <header class="admin-dashboard-nav">
+          <a class="brand" href="/" aria-label="Shield Protection Australia home">
+            <img src="/assets/logo-512.png" alt="">
+            <span>Shield Protection Australia</span>
+          </a>
+          <nav class="admin-top-nav">
+            <a href="/admin/" aria-current="page">Policies</a>
+            <a href="/">Website</a>
+            <a href="/forms/">Forms</a>
+          </nav>
+          <button class="button ghost admin-signout" type="button" data-admin-signout hidden>Sign Out</button>
+        </header>
+
+        <div class="admin-main">
+          <section class="admin-topbar">
             <div>
               <p class="eyebrow">Dashboard</p>
               <h1>Policies</h1>
             </div>
             <button class="button primary" type="button" data-new-policy>New Policy</button>
-          </header>
+          </section>
+
+          <section class="admin-stat-grid" aria-label="Policy statistics">
+            <article class="admin-stat-card">
+              <span>Total Policies</span>
+              <strong data-stat-policies>0</strong>
+              <div class="stat-bar"><i data-stat-policy-bar></i></div>
+            </article>
+            <article class="admin-stat-card">
+              <span>Uploaded Files</span>
+              <strong data-stat-files>0</strong>
+              <div class="stat-bar"><i data-stat-file-bar></i></div>
+            </article>
+            <article class="admin-stat-card">
+              <span>This Month</span>
+              <strong data-stat-month>0</strong>
+              <div class="mini-chart" data-upload-chart></div>
+            </article>
+            <article class="admin-stat-card">
+              <span>Awaiting Files</span>
+              <strong data-stat-empty>0</strong>
+              <div class="stat-bar quiet"><i data-stat-empty-bar></i></div>
+            </article>
+          </section>
 
           <section class="admin-card policy-editor" data-policy-editor hidden>
             <form data-policy-form>

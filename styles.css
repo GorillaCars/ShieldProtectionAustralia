@@ -560,6 +560,11 @@ body.modal-open {
   display: none;
 }
 
+.admin-login-screen[hidden],
+.admin-dashboard[hidden] {
+  display: none !important;
+}
+
 .upload-modal {
   position: fixed;
   inset: 0;

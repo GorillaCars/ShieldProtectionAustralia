@@ -35,6 +35,7 @@
     loginView.hidden = isAdmin;
     panel.hidden = !isAdmin;
     signoutButton.hidden = !isAdmin;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
   function escapeHtml(value) {

@@ -41,9 +41,9 @@
             <span>Shield Protection Australia</span>
           </a>
           <nav class="admin-top-nav">
-            <a href="/admin/" aria-current="page">Policies</a>
+            <button type="button" aria-current="page" data-admin-view="policies">Policies</button>
             <a href="/">Website</a>
-            <a href="/forms/">Forms</a>
+            <button type="button" data-admin-view="forms">Forms</button>
           </nav>
           <button class="notification-button" type="button" aria-label="Open notifications" aria-expanded="false" data-notification-toggle>
             <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -56,66 +56,122 @@
         </header>
 
         <div class="admin-main">
-          <section class="admin-topbar">
-            <div>
-              <p class="eyebrow">Dashboard</p>
-              <h1>Policies</h1>
-            </div>
-            <button class="button primary" type="button" data-new-policy>New Policy</button>
-          </section>
-
-          <section class="admin-stat-grid" aria-label="Policy statistics">
-            <article class="admin-stat-card">
-              <span>Total Policies</span>
-              <strong data-stat-policies>0</strong>
-              <div class="stat-bar"><i data-stat-policy-bar></i></div>
-            </article>
-            <article class="admin-stat-card">
-              <span>Uploaded Files</span>
-              <strong data-stat-files>0</strong>
-              <div class="stat-bar"><i data-stat-file-bar></i></div>
-            </article>
-            <article class="admin-stat-card">
-              <span>This Month</span>
-              <strong data-stat-month>0</strong>
-              <div class="mini-chart" data-upload-chart></div>
-            </article>
-            <article class="admin-stat-card">
-              <span>Awaiting Files</span>
-              <strong data-stat-empty>0</strong>
-              <div class="stat-bar quiet"><i data-stat-empty-bar></i></div>
-            </article>
-          </section>
-
-          <section class="admin-card policy-editor" data-policy-editor hidden>
-            <form data-policy-form>
-              <input type="hidden" name="id">
-              <label>
-                <span>Product Number</span>
-                <input name="policy_no" type="text" autocomplete="off" value="SPA-" required>
-              </label>
-              <label>
-                <span>Customer Full Name</span>
-                <input name="customer_full_name" type="text" autocomplete="off" required>
-              </label>
-              <div class="admin-form-actions">
-                <button class="button primary" type="submit">Save Policy</button>
-                <button class="button ghost" type="button" data-cancel-policy>Cancel</button>
-              </div>
-              <p class="form-status" data-policy-status></p>
-            </form>
-          </section>
-
-          <section class="admin-card table-card">
-            <div class="table-toolbar">
+          <div data-admin-view-panel="policies">
+            <section class="admin-topbar">
               <div>
-                <h2>Policy Records</h2>
-                <p data-policy-count>0 policies</p>
+                <p class="eyebrow">Dashboard</p>
+                <h1>Policies</h1>
               </div>
-              <input class="table-search" type="search" placeholder="Search policies" data-policy-search>
-            </div>
-            <div class="policy-table" data-policy-list></div>
-          </section>
+              <button class="button primary" type="button" data-new-policy>New Policy</button>
+            </section>
+
+            <section class="admin-stat-grid" aria-label="Policy statistics">
+              <article class="admin-stat-card">
+                <span>Total Policies</span>
+                <strong data-stat-policies>0</strong>
+                <div class="stat-bar"><i data-stat-policy-bar></i></div>
+              </article>
+              <article class="admin-stat-card">
+                <span>Uploaded Files</span>
+                <strong data-stat-files>0</strong>
+                <div class="stat-bar"><i data-stat-file-bar></i></div>
+              </article>
+              <article class="admin-stat-card">
+                <span>This Month</span>
+                <strong data-stat-month>0</strong>
+                <div class="mini-chart" data-upload-chart></div>
+              </article>
+              <article class="admin-stat-card">
+                <span>Awaiting Files</span>
+                <strong data-stat-empty>0</strong>
+                <div class="stat-bar quiet"><i data-stat-empty-bar></i></div>
+              </article>
+            </section>
+
+            <section class="admin-card policy-editor" data-policy-editor hidden>
+              <form data-policy-form>
+                <input type="hidden" name="id">
+                <label>
+                  <span>Product Number</span>
+                  <input name="policy_no" type="text" autocomplete="off" value="SPA-" required>
+                </label>
+                <label>
+                  <span>Customer Full Name</span>
+                  <input name="customer_full_name" type="text" autocomplete="off" required>
+                </label>
+                <div class="admin-form-actions">
+                  <button class="button primary" type="submit">Save Policy</button>
+                  <button class="button ghost" type="button" data-cancel-policy>Cancel</button>
+                </div>
+                <p class="form-status" data-policy-status></p>
+              </form>
+            </section>
+
+            <section class="admin-card table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h2>Policy Records</h2>
+                  <p data-policy-count>0 policies</p>
+                </div>
+                <input class="table-search" type="search" placeholder="Search policies" data-policy-search>
+              </div>
+              <div class="policy-table" data-policy-list></div>
+            </section>
+          </div>
+
+          <div data-admin-view-panel="forms" hidden>
+            <section class="admin-topbar">
+              <div>
+                <p class="eyebrow">Downloads</p>
+                <h1>Forms</h1>
+              </div>
+              <button class="button primary" type="button" data-new-form>New Form</button>
+            </section>
+
+            <section class="admin-card form-manager" data-form-editor hidden>
+              <form data-managed-form>
+                <input type="hidden" name="id">
+                <input type="hidden" name="file_path">
+                <input type="hidden" name="file_source">
+                <input type="hidden" name="file_name">
+                <label>
+                  <span>Title</span>
+                  <input name="title" type="text" autocomplete="off" required>
+                </label>
+                <label>
+                  <span>Order</span>
+                  <input name="display_order" type="number" min="0" step="1" value="1" required>
+                </label>
+                <label class="form-manager-wide">
+                  <span>Description</span>
+                  <textarea name="description" rows="3" required></textarea>
+                </label>
+                <label>
+                  <span>PDF File</span>
+                  <input name="file" type="file" accept="application/pdf">
+                </label>
+                <label class="toggle-label">
+                  <input name="is_active" type="checkbox" checked>
+                  <span>Show on public Forms page</span>
+                </label>
+                <div class="admin-form-actions form-manager-wide">
+                  <button class="button primary" type="submit">Save Form</button>
+                  <button class="button ghost" type="button" data-cancel-form>Cancel</button>
+                </div>
+                <p class="form-status form-manager-wide" data-managed-form-status></p>
+              </form>
+            </section>
+
+            <section class="admin-card table-card">
+              <div class="table-toolbar">
+                <div>
+                  <h2>Download Forms</h2>
+                  <p data-managed-form-count>0 forms</p>
+                </div>
+              </div>
+              <div class="managed-form-list" data-managed-form-list></div>
+            </section>
+          </div>
         </div>
 
         <div class="policy-detail-modal" data-policy-detail-modal hidden>

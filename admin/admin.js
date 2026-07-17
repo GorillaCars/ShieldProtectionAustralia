@@ -2,6 +2,8 @@
   const adminEmail = "admin@shieldprotectionaustralia.com.au";
   const loginView = document.querySelector("[data-admin-login]");
   const panel = document.querySelector("[data-admin-panel]");
+  const adminViewButtons = document.querySelectorAll("[data-admin-view]");
+  const adminViewPanels = document.querySelectorAll("[data-admin-view-panel]");
   const loginForm = document.querySelector("[data-login-form]");
   const loginStatus = document.querySelector("[data-login-status]");
   const signoutButton = document.querySelector("[data-admin-signout]");
@@ -40,6 +42,13 @@
   const notificationPane = document.querySelector("[data-notification-pane]");
   const notificationClose = document.querySelector("[data-notification-close]");
   const notificationList = document.querySelector("[data-notification-list]");
+  const newFormButton = document.querySelector("[data-new-form]");
+  const formEditor = document.querySelector("[data-form-editor]");
+  const managedForm = document.querySelector("[data-managed-form]");
+  const managedFormStatus = document.querySelector("[data-managed-form-status]");
+  const cancelFormButton = document.querySelector("[data-cancel-form]");
+  const managedFormList = document.querySelector("[data-managed-form-list]");
+  const managedFormCount = document.querySelector("[data-managed-form-count]");
   const allowedTypes = new Set([
     "application/pdf",
     "image/jpeg",
@@ -47,10 +56,12 @@
     "image/heic",
     "image/heif"
   ]);
+  const formAllowedTypes = new Set(["application/pdf"]);
   let supabase;
   let policies = [];
   let fileMap = new Map();
   let notifications = [];
+  let managedForms = [];
   let notificationPoll;
   let activePolicyId = "";
 
@@ -65,6 +76,27 @@
     panel.hidden = !isAdmin;
     signoutButton.hidden = !isAdmin;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
+
+  function showAdminView(view) {
+    adminViewPanels.forEach((viewPanel) => {
+      viewPanel.hidden = viewPanel.dataset.adminViewPanel !== view;
+    });
+
+    adminViewButtons.forEach((button) => {
+      if (button.dataset.adminView === view) {
+        button.setAttribute("aria-current", "page");
+      } else {
+        button.removeAttribute("aria-current");
+      }
+    });
+
+    if (view === "forms") {
+      loadManagedForms().catch((error) => {
+        managedFormList.innerHTML = '<div class="empty-state">Forms could not be loaded.</div>';
+        console.warn(error);
+      });
+    }
   }
 
   function escapeHtml(value) {
@@ -95,6 +127,17 @@
 
   function cleanFileName(name) {
     return name.replace(/[^a-z0-9._-]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "document";
+  }
+
+  function getManagedFormUrl(form) {
+    if (form.file_source === "storage") {
+      return supabase.storage.from("form-downloads").getPublicUrl(form.file_path).data.publicUrl;
+    }
+    return form.file_path || "#";
+  }
+
+  function getManagedField(name) {
+    return managedForm.elements.namedItem(name);
   }
 
   function getProductRef(policyNo) {
@@ -278,6 +321,42 @@
     }
   }
 
+  function renderManagedForms() {
+    managedFormCount.textContent = `${managedForms.length} ${managedForms.length === 1 ? "form" : "forms"}`;
+
+    if (!managedForms.length) {
+      managedFormList.innerHTML = '<div class="empty-state">No forms have been added yet.</div>';
+      return;
+    }
+
+    managedFormList.innerHTML = managedForms.map((form) => `
+      <article class="managed-form-row">
+        <div class="managed-form-meta">
+          <span>Order ${Number(form.display_order || 0)} - ${form.is_active ? "Visible" : "Hidden"}</span>
+          <strong>${escapeHtml(form.title)}</strong>
+          <p>${escapeHtml(form.description)}</p>
+          <a href="${escapeHtml(getManagedFormUrl(form))}" target="_blank" rel="noopener">View PDF</a>
+        </div>
+        <div class="file-actions">
+          <button type="button" data-edit-form="${form.id}">Edit</button>
+          <button type="button" data-delete-form="${form.id}">Delete</button>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  async function loadManagedForms() {
+    const { data, error } = await supabase
+      .from("forms")
+      .select("id, title, description, file_name, file_path, file_source, display_order, is_active, created_at, updated_at")
+      .order("display_order", { ascending: true })
+      .order("title", { ascending: true });
+
+    if (error) throw error;
+    managedForms = data || [];
+    renderManagedForms();
+  }
+
   function hideVehicleCard() {
     vehicleCard.hidden = true;
     vehicleImage.innerHTML = "";
@@ -412,6 +491,29 @@
     setStatus(policyStatus, "", "");
   }
 
+  function openFormEditor(form) {
+    formEditor.hidden = false;
+    getManagedField("id").value = form?.id || "";
+    getManagedField("title").value = form?.title || "";
+    getManagedField("description").value = form?.description || "";
+    getManagedField("display_order").value = form?.display_order ?? (managedForms.length + 1);
+    getManagedField("file_path").value = form?.file_path || "";
+    getManagedField("file_source").value = form?.file_source || "";
+    getManagedField("file_name").value = form?.file_name || "";
+    getManagedField("is_active").checked = form?.is_active ?? true;
+    getManagedField("file").value = "";
+    getManagedField("file").required = !form?.file_path;
+    setStatus(managedFormStatus, "", "");
+    getManagedField("title").focus();
+  }
+
+  function closeFormEditor() {
+    formEditor.hidden = true;
+    managedForm.reset();
+    getManagedField("file").required = false;
+    setStatus(managedFormStatus, "", "");
+  }
+
   async function ensureAdminSession() {
     supabase = window.getShieldSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
@@ -466,6 +568,9 @@
   cancelPolicyButton.addEventListener("click", closeEditor);
   searchInput.addEventListener("input", renderPolicies);
   detailCloseButtons.forEach((button) => button.addEventListener("click", closeDetail));
+  adminViewButtons.forEach((button) => button.addEventListener("click", () => showAdminView(button.dataset.adminView)));
+  newFormButton.addEventListener("click", () => openFormEditor());
+  cancelFormButton.addEventListener("click", closeFormEditor);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !detailModal.hidden) closeDetail();
@@ -496,6 +601,85 @@
       await loadPolicies();
     } catch (error) {
       setStatus(policyStatus, error.message || "Policy could not be saved.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  managedForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = managedForm.querySelector("button[type='submit']");
+    const fileInput = getManagedField("file");
+    const file = fileInput.files[0];
+    const id = getManagedField("id").value;
+    const previousForm = managedForms.find((item) => item.id === id);
+    const payload = {
+      title: getManagedField("title").value.trim(),
+      description: getManagedField("description").value.trim(),
+      display_order: Number(getManagedField("display_order").value || 0),
+      is_active: getManagedField("is_active").checked,
+      file_name: getManagedField("file_name").value,
+      file_path: getManagedField("file_path").value,
+      file_source: getManagedField("file_source").value || "storage"
+    };
+
+    if (!payload.title || !payload.description) {
+      setStatus(managedFormStatus, "Title and description are required.", "error");
+      return;
+    }
+
+    if (!(file instanceof File) && !payload.file_path) {
+      setStatus(managedFormStatus, "Choose a PDF file before saving this form.", "error");
+      return;
+    }
+
+    if (file instanceof File && file.size > 0) {
+      const isPdf = formAllowedTypes.has(file.type) || file.name.toLowerCase().endsWith(".pdf");
+      if (!isPdf) {
+        setStatus(managedFormStatus, "Upload a PDF file.", "error");
+        return;
+      }
+
+      if (file.size > 15 * 1024 * 1024) {
+        setStatus(managedFormStatus, "Upload a PDF smaller than 15 MB.", "error");
+        return;
+      }
+    }
+
+    button.disabled = true;
+    setStatus(managedFormStatus, "Saving...", "");
+    try {
+      let replacementPath = "";
+
+      if (file instanceof File && file.size > 0) {
+        replacementPath = `forms/${Date.now()}-${cleanFileName(file.name)}`;
+        const { error: uploadError } = await supabase.storage
+          .from("form-downloads")
+          .upload(replacementPath, file, {
+            cacheControl: "3600",
+            contentType: file.type || "application/pdf",
+            upsert: false
+          });
+        if (uploadError) throw uploadError;
+
+        payload.file_name = file.name;
+        payload.file_path = replacementPath;
+        payload.file_source = "storage";
+      }
+
+      const result = id
+        ? await supabase.from("forms").update(payload).eq("id", id)
+        : await supabase.from("forms").insert(payload);
+      if (result.error) throw result.error;
+
+      if (replacementPath && previousForm?.file_source === "storage" && previousForm.file_path) {
+        await supabase.storage.from("form-downloads").remove([previousForm.file_path]);
+      }
+
+      closeFormEditor();
+      await loadManagedForms();
+    } catch (error) {
+      setStatus(managedFormStatus, error.message || "Form could not be saved.", "error");
     } finally {
       button.disabled = false;
     }
@@ -698,6 +882,37 @@
     } catch (error) {
       alert(error.message || "Could not delete file.");
       target.disabled = false;
+    }
+  });
+
+  managedFormList.addEventListener("click", async (event) => {
+    const editButton = event.target.closest("[data-edit-form]");
+    const deleteButton = event.target.closest("[data-delete-form]");
+
+    if (editButton) {
+      const form = managedForms.find((item) => item.id === editButton.dataset.editForm);
+      if (form) openFormEditor(form);
+      return;
+    }
+
+    if (!deleteButton) return;
+    const form = managedForms.find((item) => item.id === deleteButton.dataset.deleteForm);
+    if (!form) return;
+    if (!confirm(`Delete ${form.title}? This removes it from the public Forms page.`)) return;
+
+    deleteButton.disabled = true;
+    try {
+      if (form.file_source === "storage" && form.file_path) {
+        const { error: storageError } = await supabase.storage.from("form-downloads").remove([form.file_path]);
+        if (storageError) throw storageError;
+      }
+
+      const { error } = await supabase.from("forms").delete().eq("id", form.id);
+      if (error) throw error;
+      await loadManagedForms();
+    } catch (error) {
+      alert(error.message || "Form could not be deleted.");
+      deleteButton.disabled = false;
     }
   });
 

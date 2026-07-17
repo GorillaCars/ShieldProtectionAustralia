@@ -13,6 +13,7 @@ const entries = [
   "assets",
   "styles.css",
   "script.js",
+  "forms.js",
   "supabase-client.js",
   "upload-documents.js"
 ];

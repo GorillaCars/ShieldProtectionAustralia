@@ -625,7 +625,8 @@ body.modal-open {
 .upload-form,
 .admin-login-form,
 .policy-editor form,
-.admin-upload-form {
+.admin-upload-form,
+.form-manager form {
   display: grid;
   gap: 16px;
   margin-top: 24px;
@@ -634,7 +635,8 @@ body.modal-open {
 .upload-form label,
 .admin-login-form label,
 .policy-editor label,
-.admin-upload-form label {
+.admin-upload-form label,
+.form-manager label {
   display: grid;
   gap: 8px;
   color: var(--muted);
@@ -647,6 +649,8 @@ body.modal-open {
 .admin-login-form input,
 .policy-editor input,
 .admin-upload-form input,
+.form-manager input,
+.form-manager textarea,
 .table-search {
   width: 100%;
   min-height: 48px;
@@ -744,18 +748,30 @@ body.modal-open {
   margin-left: auto;
 }
 
-.admin-top-nav a {
+.admin-top-nav a,
+.admin-top-nav button {
   padding: 10px 12px;
   color: var(--muted);
+  background: transparent;
+  border: 0;
   text-decoration: none;
   border-radius: 4px;
   font-weight: 800;
   font-size: 0.82rem;
   text-transform: uppercase;
+  cursor: pointer;
+  font: inherit;
+}
+
+.form-manager textarea {
+  resize: vertical;
+  min-height: 108px;
 }
 
 .admin-top-nav a:hover,
-.admin-top-nav a[aria-current="page"] {
+.admin-top-nav a[aria-current="page"],
+.admin-top-nav button:hover,
+.admin-top-nav button[aria-current="page"] {
   color: var(--text);
   background: rgba(126, 217, 92, 0.1);
 }
@@ -987,14 +1003,48 @@ body.modal-open {
   padding: 20px;
 }
 
+.form-manager {
+  margin-bottom: 18px;
+  padding: 20px;
+}
+
 .policy-editor form {
   grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
   align-items: end;
   margin-top: 0;
 }
 
-.policy-editor input[type="hidden"] {
+.form-manager form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  margin-top: 0;
+}
+
+.policy-editor input[type="hidden"],
+.form-manager input[type="hidden"] {
   display: none;
+}
+
+.form-manager-wide,
+.form-manager .form-status {
+  grid-column: 1 / -1;
+}
+
+.toggle-label {
+  align-self: end;
+  display: flex !important;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.toggle-label input {
+  width: 18px;
+  min-height: 18px;
+  accent-color: var(--accent-strong);
 }
 
 .admin-form-actions {
@@ -1027,6 +1077,57 @@ body.modal-open {
 
 .policy-table {
   display: grid;
+}
+
+.managed-form-list {
+  display: grid;
+}
+
+.managed-form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.managed-form-row:last-child {
+  border-bottom: 0;
+}
+
+.managed-form-meta {
+  min-width: 0;
+}
+
+.managed-form-meta span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.managed-form-meta strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--text);
+  font-size: 1.08rem;
+}
+
+.managed-form-meta p {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.managed-form-meta a {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--accent-strong);
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .policy-row {
@@ -1403,7 +1504,9 @@ body.modal-open {
   }
 
   .policy-editor form,
+  .form-manager form,
   .policy-summary,
+  .managed-form-row,
   .policy-detail-form,
   .vehicle-info-card,
   .attachment-card,

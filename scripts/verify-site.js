@@ -8,6 +8,7 @@ const required = [
   "forms/index.html",
   "styles.css",
   "script.js",
+  "forms.js",
   "supabase-client.js",
   "upload-documents.js",
   "vercel.json",

@@ -240,6 +240,16 @@ h1 {
   color: var(--text);
 }
 
+.button.danger {
+  border: 1px solid rgba(255, 130, 110, 0.55);
+  background: rgba(150, 35, 24, 0.22);
+  color: #ffd4cc;
+}
+
+.button.danger:hover {
+  background: rgba(190, 52, 36, 0.32);
+}
+
 .form-card span,
 .feature-grid span {
   color: var(--accent);

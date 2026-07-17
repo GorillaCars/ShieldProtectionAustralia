@@ -29,6 +29,7 @@
   const detailCloseButtons = document.querySelectorAll("[data-policy-detail-close]");
   const adminUploadForm = document.querySelector("[data-admin-upload-form]");
   const adminUploadStatus = document.querySelector("[data-admin-upload-status]");
+  const deletePolicyButton = document.querySelector("[data-delete-policy]");
   const allowedTypes = new Set([
     "application/pdf",
     "image/jpeg",
@@ -436,6 +437,36 @@
       setStatus(adminUploadStatus, error.message || "Upload failed.", "error");
     } finally {
       button.disabled = false;
+    }
+  });
+
+  deletePolicyButton.addEventListener("click", async () => {
+    if (!activePolicyId) return;
+    const policy = policies.find((item) => item.id === activePolicyId);
+    if (!policy) return;
+
+    const confirmed = confirm(`Are you sure you want to delete policy ${policy.policy_no}? This will also remove its uploaded attachments.`);
+    if (!confirmed) return;
+
+    deletePolicyButton.disabled = true;
+    setStatus(detailStatus, "Deleting policy...", "");
+    try {
+      const files = fileMap.get(activePolicyId) || [];
+      const paths = files.map((file) => file.file_path).filter(Boolean);
+      if (paths.length) {
+        const { error: storageError } = await supabase.storage.from("policy-documents").remove(paths);
+        if (storageError) throw storageError;
+      }
+
+      const { error } = await supabase.from("policies").delete().eq("id", activePolicyId);
+      if (error) throw error;
+
+      closeDetail();
+      await loadPolicies();
+    } catch (error) {
+      setStatus(detailStatus, error.message || "Policy could not be deleted.", "error");
+    } finally {
+      deletePolicyButton.disabled = false;
     }
   });
 

@@ -97,6 +97,13 @@
     element.style.width = `${Math.max(6, Math.min(100, value))}%`;
   }
 
+  function sortPoliciesByProductNumber(items) {
+    return [...items].sort((a, b) => String(b.policy_no || "").localeCompare(String(a.policy_no || ""), undefined, {
+      numeric: true,
+      sensitivity: "base"
+    }));
+  }
+
   function renderStats() {
     const files = [...fileMap.values()].flat();
     const now = new Date();
@@ -286,14 +293,14 @@
 
   async function loadPolicies() {
     const [{ data: policyData, error: policyError }, { data: fileData, error: fileError }] = await Promise.all([
-      supabase.from("policies").select("id, policy_no, customer_full_name, created_at").order("policy_no", { ascending: true }),
+      supabase.from("policies").select("id, policy_no, customer_full_name, created_at").order("policy_no", { ascending: false }),
       supabase.from("policy_files").select("id, policy_id, file_name, file_path, content_type, file_size, created_at").order("created_at", { ascending: false })
     ]);
 
     if (policyError) throw policyError;
     if (fileError) throw fileError;
 
-    policies = policyData || [];
+    policies = sortPoliciesByProductNumber(policyData || []);
     fileMap = new Map();
     (fileData || []).forEach((file) => {
       const files = fileMap.get(file.policy_id) || [];

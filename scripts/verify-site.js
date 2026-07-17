@@ -4,10 +4,12 @@ const path = require("path");
 const required = [
   "index.html",
   "about/index.html",
+  "admin/index.html",
   "forms/index.html",
   "styles.css",
   "script.js",
   "supabase-client.js",
+  "upload-documents.js",
   "vercel.json",
   ".vercel/project.json"
 ];

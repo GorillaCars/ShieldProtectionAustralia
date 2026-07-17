@@ -40,6 +40,7 @@
             <p class="hero-copy">Shield Protection Australia gives dealers and customers a clearer, stronger warranty experience, built around confidence at the point of sale and support when it matters.</p>
             <div class="actions">
               <a class="button primary" href="/forms/">Download Forms</a>
+              <button class="button ghost" type="button" data-upload-open>Upload Documents</button>
             </div>
           </div>
           <div class="hero-logo-card" aria-hidden="true">
@@ -48,6 +49,31 @@
         </div>
       </section>
 
+
+      <div class="upload-modal" data-upload-modal hidden>
+        <div class="upload-backdrop" data-upload-close></div>
+        <section class="upload-dialog" role="dialog" aria-modal="true" aria-labelledby="upload-title">
+          <button class="upload-close" type="button" aria-label="Close upload form" data-upload-close>×</button>
+          <p class="eyebrow">Customer upload</p>
+          <h2 id="upload-title">Upload documents</h2>
+          <form class="upload-form" data-upload-form>
+            <label>
+              <span>Policy Number</span>
+              <input name="policyNo" type="text" autocomplete="off" required>
+            </label>
+            <label>
+              <span>Full Name</span>
+              <input name="fullName" type="text" autocomplete="name" required>
+            </label>
+            <label>
+              <span>File or Photo</span>
+              <input name="file" type="file" accept="application/pdf,image/jpeg,image/png,image/heic,image/heif" required>
+            </label>
+            <button class="button primary" type="submit">Upload File</button>
+            <p class="form-status" data-upload-status></p>
+          </form>
+        </section>
+      </div>
     </main>
 
     <footer class="footer">
@@ -57,7 +83,9 @@
       <a href="/forms/">Customer Forms</a>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.5/dist/umd/supabase.min.js" defer></script>
     <script src="/supabase-client.js" defer></script>
+    <script src="/upload-documents.js" defer></script>
     <script src="/script.js" defer></script>
   </body>
 </html>

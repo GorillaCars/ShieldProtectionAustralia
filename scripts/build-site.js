@@ -8,11 +8,13 @@ const dist = path.join(root, "dist");
 const entries = [
   "index.html",
   "about",
+  "admin",
   "forms",
   "assets",
   "styles.css",
   "script.js",
-  "supabase-client.js"
+  "supabase-client.js",
+  "upload-documents.js"
 ];
 
 fs.rmSync(dist, { recursive: true, force: true });

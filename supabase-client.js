@@ -4,4 +4,18 @@ window.ShieldSupabase = {
   ready: false
 };
 
-// Future digital form capture can import Supabase JS and use this public config.
+window.getShieldSupabaseClient = function getShieldSupabaseClient() {
+  if (!window.supabase || !window.supabase.createClient) {
+    throw new Error("Supabase client library is not loaded.");
+  }
+
+  if (!window.ShieldSupabase.client) {
+    window.ShieldSupabase.client = window.supabase.createClient(
+      window.ShieldSupabase.url,
+      window.ShieldSupabase.publishableKey
+    );
+    window.ShieldSupabase.ready = true;
+  }
+
+  return window.ShieldSupabase.client;
+};

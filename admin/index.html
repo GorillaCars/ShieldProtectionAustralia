@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin | Shield Protection Australia</title>
+    <meta name="robots" content="noindex,nofollow">
+    <link rel="icon" href="/assets/logo-128.png">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body class="admin-body">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand" href="/" aria-label="Shield Protection Australia home">
+          <img src="/assets/logo-512.png" alt="">
+          <span>Shield Protection Australia</span>
+        </a>
+        <nav class="admin-side-nav">
+          <a href="/admin/" aria-current="page">Policies</a>
+          <a href="/">Website</a>
+          <a href="/forms/">Forms</a>
+        </nav>
+        <button class="button ghost admin-signout" type="button" data-admin-signout hidden>Sign Out</button>
+      </aside>
+
+      <section class="admin-main">
+        <div class="admin-login" data-admin-login>
+          <p class="eyebrow">Admin</p>
+          <h1>Policy dashboard</h1>
+          <form class="admin-card admin-login-form" data-login-form>
+            <label>
+              <span>Email</span>
+              <input name="email" type="email" value="admin@shieldprotectionaustralia.com.au" autocomplete="username" required>
+            </label>
+            <label>
+              <span>Password</span>
+              <input name="password" type="password" autocomplete="current-password" required>
+            </label>
+            <button class="button primary" type="submit">Log In</button>
+            <p class="form-status" data-login-status></p>
+          </form>
+        </div>
+
+        <div class="admin-panel" data-admin-panel hidden>
+          <header class="admin-topbar">
+            <div>
+              <p class="eyebrow">Dashboard</p>
+              <h1>Policies</h1>
+            </div>
+            <button class="button primary" type="button" data-new-policy>New Policy</button>
+          </header>
+
+          <section class="admin-card policy-editor" data-policy-editor hidden>
+            <form data-policy-form>
+              <input type="hidden" name="id">
+              <label>
+                <span>Policy No.</span>
+                <input name="policy_no" type="text" autocomplete="off" required>
+              </label>
+              <label>
+                <span>Customer Full Name</span>
+                <input name="customer_full_name" type="text" autocomplete="off" required>
+              </label>
+              <div class="admin-form-actions">
+                <button class="button primary" type="submit">Save Policy</button>
+                <button class="button ghost" type="button" data-cancel-policy>Cancel</button>
+              </div>
+              <p class="form-status" data-policy-status></p>
+            </form>
+          </section>
+
+          <section class="admin-card table-card">
+            <div class="table-toolbar">
+              <div>
+                <h2>Policy Records</h2>
+                <p data-policy-count>0 policies</p>
+              </div>
+              <input class="table-search" type="search" placeholder="Search policies" data-policy-search>
+            </div>
+            <div class="policy-table" data-policy-list></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.5/dist/umd/supabase.min.js" defer></script>
+    <script src="/supabase-client.js" defer></script>
+    <script src="/admin/admin.js" defer></script>
+  </body>
+</html>

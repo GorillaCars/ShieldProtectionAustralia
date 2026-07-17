@@ -27,6 +27,11 @@
   const detailFiles = document.querySelector("[data-policy-detail-files]");
   const detailFileCount = document.querySelector("[data-policy-detail-file-count]");
   const detailCloseButtons = document.querySelectorAll("[data-policy-detail-close]");
+  const vehicleCard = document.querySelector("[data-vehicle-card]");
+  const vehicleImage = document.querySelector("[data-vehicle-image]");
+  const vehicleTitle = document.querySelector("[data-vehicle-title]");
+  const vehicleDetails = document.querySelector("[data-vehicle-details]");
+  const vehicleLink = document.querySelector("[data-vehicle-link]");
   const adminUploadForm = document.querySelector("[data-admin-upload-form]");
   const adminUploadStatus = document.querySelector("[data-admin-upload-status]");
   const deletePolicyButton = document.querySelector("[data-delete-policy]");
@@ -90,6 +95,11 @@
 
   function cleanFileName(name) {
     return name.replace(/[^a-z0-9._-]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "document";
+  }
+
+  function getProductRef(policyNo) {
+    const match = String(policyNo || "").trim().toUpperCase().match(/^SPA-(\d+)$/);
+    return match ? `SPA-${match[1]}` : "";
   }
 
   function setBar(element, value) {
@@ -268,6 +278,81 @@
     }
   }
 
+  function hideVehicleCard() {
+    vehicleCard.hidden = true;
+    vehicleImage.innerHTML = "";
+    vehicleTitle.textContent = "";
+    vehicleDetails.innerHTML = "";
+    vehicleLink.hidden = true;
+    vehicleLink.removeAttribute("href");
+  }
+
+  function formatVehicleValue(value) {
+    if (value === undefined || value === null || value === "") return "";
+    if (typeof value === "number") return value.toLocaleString("en-AU");
+    return String(value);
+  }
+
+  function getSafeVehicleUrl(value) {
+    try {
+      const url = new URL(String(value || ""));
+      return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function renderVehicleCard(vehicle) {
+    const imageUrl = getSafeVehicleUrl(vehicle.image_thumbnail || vehicle.image);
+    vehicleImage.innerHTML = imageUrl
+      ? `<img src="${escapeHtml(imageUrl)}" alt="">`
+      : '<span class="attachment-icon">Vehicle</span>';
+    vehicleTitle.textContent = vehicle.vehicle_title || "Vehicle details";
+
+    const detailRows = [
+      ["Lot", vehicle.lot],
+      ["Year", vehicle.year],
+      ["Kilometres", vehicle.kilometers],
+      ["Transmission", vehicle.transmission],
+      ["Engine", vehicle.engine]
+    ].filter(([, value]) => value !== undefined && value !== null && value !== "");
+
+    vehicleDetails.innerHTML = detailRows.map(([label, value]) => `
+      <div>
+        <dt>${escapeHtml(label)}</dt>
+        <dd>${escapeHtml(formatVehicleValue(value))}</dd>
+      </div>
+    `).join("");
+
+    const listingUrl = getSafeVehicleUrl(vehicle.listing_link);
+    if (listingUrl) {
+      vehicleLink.href = listingUrl;
+      vehicleLink.hidden = false;
+    } else {
+      vehicleLink.hidden = true;
+      vehicleLink.removeAttribute("href");
+    }
+
+    vehicleCard.hidden = false;
+  }
+
+  async function loadVehicleInfo(policyNo) {
+    hideVehicleCard();
+    const ref = getProductRef(policyNo);
+    if (!ref) return;
+
+    try {
+      const response = await fetch(`/api/warranty-vehicle?ref=${encodeURIComponent(ref)}`, {
+        headers: { Accept: "application/json" }
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      if (payload?.vehicle) renderVehicleCard(payload.vehicle);
+    } catch (error) {
+      console.warn("Vehicle lookup failed", error);
+    }
+  }
+
   async function openDetail(policy) {
     activePolicyId = policy.id;
     detailForm.id.value = policy.id;
@@ -276,7 +361,7 @@
     setStatus(detailStatus, "", "");
     detailModal.hidden = false;
     document.body.classList.add("modal-open");
-    await renderDetailFiles(policy.id);
+    await Promise.all([renderDetailFiles(policy.id), loadVehicleInfo(policy.policy_no)]);
     detailForm.policy_no.focus();
   }
 
@@ -286,6 +371,7 @@
     detailForm.reset();
     activePolicyId = "";
     detailFiles.innerHTML = "";
+    hideVehicleCard();
     setStatus(detailStatus, "", "");
     setStatus(adminUploadStatus, "", "");
     adminUploadForm.reset();

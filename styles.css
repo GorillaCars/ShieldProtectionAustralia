@@ -1148,7 +1148,7 @@ body.modal-open {
 
 .policy-summary {
   display: grid;
-  grid-template-columns: 1.1fr 1.5fr 0.4fr auto;
+  grid-template-columns: 1fr 1.35fr 0.35fr 1fr auto;
   gap: 16px;
   align-items: center;
   padding: 18px 20px;
@@ -1167,6 +1167,10 @@ body.modal-open {
   display: block;
   margin-top: 6px;
   color: var(--text);
+}
+
+.policy-summary div {
+  min-width: 0;
 }
 
 .row-actions,
@@ -1417,6 +1421,28 @@ body.modal-open {
 
 .admin-upload-form .form-status {
   grid-column: 1 / -1;
+}
+
+.admin-drop-zone {
+  min-height: 92px;
+  padding: 16px;
+  border: 1px dashed var(--accent-line);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.18);
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.admin-drop-zone small {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.admin-drop-zone.is-dragging {
+  background: rgba(126, 217, 92, 0.12);
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 3px rgba(126, 217, 92, 0.12);
 }
 
 .attachment-list {

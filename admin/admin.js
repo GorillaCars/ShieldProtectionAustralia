@@ -35,6 +35,8 @@
   const vehicleDetails = document.querySelector("[data-vehicle-details]");
   const vehicleLink = document.querySelector("[data-vehicle-link]");
   const adminUploadForm = document.querySelector("[data-admin-upload-form]");
+  const adminUploadInput = adminUploadForm.querySelector("input[name='file']");
+  const adminDropZone = document.querySelector("[data-admin-drop-zone]");
   const adminUploadStatus = document.querySelector("[data-admin-upload-status]");
   const deletePolicyButton = document.querySelector("[data-delete-policy]");
   const notificationToggle = document.querySelector("[data-notification-toggle]");
@@ -119,6 +121,18 @@
       unit += 1;
     }
     return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+  }
+
+  function formatDateTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Unknown";
+    return date.toLocaleString("en-AU", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   }
 
   function isPreviewableImage(file) {
@@ -227,6 +241,10 @@
             <div>
               <span>Files</span>
               <strong>${files.length}</strong>
+            </div>
+            <div>
+              <span>Created</span>
+              <strong>${escapeHtml(formatDateTime(policy.created_at))}</strong>
             </div>
             <div class="row-actions">
               <span>Open</span>
@@ -719,9 +737,11 @@
 
   adminUploadForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const button = adminUploadForm.querySelector("button[type='submit']");
-    const file = new FormData(adminUploadForm).get("file");
+    await uploadAdminPolicyFile(new FormData(adminUploadForm).get("file"));
+  });
 
+  async function uploadAdminPolicyFile(file) {
+    const button = adminUploadForm.querySelector("button[type='submit']");
     if (!activePolicyId) {
       setStatus(adminUploadStatus, "Open a policy before uploading.", "error");
       return;
@@ -774,6 +794,29 @@
     } finally {
       button.disabled = false;
     }
+  }
+
+  ["dragenter", "dragover"].forEach((eventName) => {
+    adminDropZone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      adminDropZone.classList.add("is-dragging");
+    });
+  });
+
+  ["dragleave", "drop"].forEach((eventName) => {
+    adminDropZone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      adminDropZone.classList.remove("is-dragging");
+    });
+  });
+
+  adminDropZone.addEventListener("drop", async (event) => {
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) return;
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    adminUploadInput.files = transfer.files;
+    await uploadAdminPolicyFile(file);
   });
 
   deletePolicyButton.addEventListener("click", async () => {

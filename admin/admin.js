@@ -30,6 +30,11 @@
   const adminUploadForm = document.querySelector("[data-admin-upload-form]");
   const adminUploadStatus = document.querySelector("[data-admin-upload-status]");
   const deletePolicyButton = document.querySelector("[data-delete-policy]");
+  const notificationToggle = document.querySelector("[data-notification-toggle]");
+  const notificationDot = document.querySelector("[data-notification-dot]");
+  const notificationPane = document.querySelector("[data-notification-pane]");
+  const notificationClose = document.querySelector("[data-notification-close]");
+  const notificationList = document.querySelector("[data-notification-list]");
   const allowedTypes = new Set([
     "application/pdf",
     "image/jpeg",
@@ -40,6 +45,8 @@
   let supabase;
   let policies = [];
   let fileMap = new Map();
+  let notifications = [];
+  let notificationPoll;
   let activePolicyId = "";
 
   function setStatus(element, message, tone) {
@@ -150,7 +157,7 @@
         <article class="policy-row" data-policy-id="${policy.id}" role="button" tabindex="0" aria-label="Open ${escapeHtml(policy.policy_no)}">
           <div class="policy-summary">
             <div>
-              <span>Stock Number</span>
+              <span>Product Number</span>
               <strong>${escapeHtml(policy.policy_no)}</strong>
             </div>
             <div>
@@ -169,6 +176,47 @@
       `;
     }).join("");
     renderStats();
+  }
+
+  function formatNotificationTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("en-AU", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function renderNotifications() {
+    const unreadCount = notifications.filter((notification) => !notification.read_at).length;
+    notificationDot.hidden = unreadCount === 0;
+
+    if (!notifications.length) {
+      notificationList.innerHTML = '<div class="empty-state">No notifications yet.</div>';
+      return;
+    }
+
+    notificationList.innerHTML = notifications.map((notification) => `
+      <button class="notification-item${notification.read_at ? "" : " is-unread"}" type="button" data-notification-id="${notification.id}" data-policy-id="${notification.policy_id}">
+        <span>${escapeHtml(notification.title)}</span>
+        <strong>${escapeHtml(notification.body)}</strong>
+        <small>${formatNotificationTime(notification.created_at)}</small>
+      </button>
+    `).join("");
+  }
+
+  async function loadNotifications() {
+    const { data, error } = await supabase
+      .from("admin_notifications")
+      .select("id, policy_id, file_id, title, body, read_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(40);
+
+    if (error) throw error;
+    notifications = data || [];
+    renderNotifications();
   }
 
   async function getSignedUrl(file) {
@@ -259,7 +307,7 @@
   function openEditor(policy) {
     editor.hidden = false;
     policyForm.id.value = policy?.id || "";
-    policyForm.policy_no.value = policy?.policy_no || "";
+    policyForm.policy_no.value = policy?.policy_no || "SPA-";
     policyForm.customer_full_name.value = policy?.customer_full_name || "";
     setStatus(policyStatus, "", "");
     policyForm.policy_no.focus();
@@ -276,7 +324,10 @@
     const { data: { session } } = await supabase.auth.getSession();
     const isAdmin = session?.user?.email?.toLowerCase() === adminEmail;
     showPanel(isAdmin);
-    if (isAdmin) await loadPolicies();
+    if (isAdmin) {
+      await Promise.all([loadPolicies(), loadNotifications()]);
+      notificationPoll = window.setInterval(() => loadNotifications().catch(console.warn), 30000);
+    }
   }
 
   loginForm.addEventListener("submit", async (event) => {
@@ -295,7 +346,10 @@
       if (data.user?.email?.toLowerCase() !== adminEmail) throw new Error("This account is not authorised for the admin panel.");
       setStatus(loginStatus, "", "");
       showPanel(true);
-      await loadPolicies();
+      await Promise.all([loadPolicies(), loadNotifications()]);
+      if (!notificationPoll) {
+        notificationPoll = window.setInterval(() => loadNotifications().catch(console.warn), 30000);
+      }
     } catch (error) {
       setStatus(loginStatus, error.message || "Login failed.", "error");
     } finally {
@@ -307,6 +361,11 @@
     await supabase.auth.signOut();
     policies = [];
     fileMap = new Map();
+    notifications = [];
+    if (notificationPoll) window.clearInterval(notificationPoll);
+    notificationPoll = undefined;
+    notificationPane.hidden = true;
+    notificationDot.hidden = true;
     showPanel(false);
   });
 
@@ -328,7 +387,7 @@
     };
 
     if (!payload.policy_no || !payload.customer_full_name) {
-      setStatus(policyStatus, "Stock number and customer name are required.", "error");
+      setStatus(policyStatus, "Product number and customer name are required.", "error");
       return;
     }
 
@@ -358,7 +417,7 @@
     };
 
     if (!payload.policy_no || !payload.customer_full_name) {
-      setStatus(detailStatus, "Stock number and customer name are required.", "error");
+      setStatus(detailStatus, "Product number and customer name are required.", "error");
       return;
     }
 
@@ -445,7 +504,7 @@
     const policy = policies.find((item) => item.id === activePolicyId);
     if (!policy) return;
 
-    const confirmed = confirm(`Are you sure you want to delete the policy for stock number ${policy.policy_no}? This will also remove its uploaded attachments.`);
+    const confirmed = confirm(`Are you sure you want to delete the policy for product number ${policy.policy_no}? This will also remove its uploaded attachments.`);
     if (!confirmed) return;
 
     deletePolicyButton.disabled = true;
@@ -462,7 +521,7 @@
       if (error) throw error;
 
       closeDetail();
-      await loadPolicies();
+      await Promise.all([loadPolicies(), loadNotifications()]);
     } catch (error) {
       setStatus(detailStatus, error.message || "Policy could not be deleted.", "error");
     } finally {
@@ -484,6 +543,46 @@
     event.preventDefault();
     const policy = policies.find((item) => item.id === row.dataset.policyId);
     if (policy) await openDetail(policy);
+  });
+
+  notificationToggle.addEventListener("click", async () => {
+    const shouldOpen = notificationPane.hidden;
+    notificationPane.hidden = !shouldOpen;
+    notificationToggle.setAttribute("aria-expanded", String(shouldOpen));
+    if (shouldOpen) await loadNotifications();
+  });
+
+  notificationClose.addEventListener("click", () => {
+    notificationPane.hidden = true;
+    notificationToggle.setAttribute("aria-expanded", "false");
+  });
+
+  notificationList.addEventListener("click", async (event) => {
+    const item = event.target.closest("[data-notification-id]");
+    if (!item) return;
+
+    const notification = notifications.find((entry) => entry.id === item.dataset.notificationId);
+    const policy = policies.find((entry) => entry.id === item.dataset.policyId);
+    if (!notification || !policy) {
+      alert("That policy could not be found. It may have been deleted.");
+      await loadNotifications();
+      return;
+    }
+
+    if (!notification.read_at) {
+      const { error } = await supabase
+        .from("admin_notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", notification.id);
+      if (error) {
+        alert(error.message || "Could not update the notification.");
+        return;
+      }
+    }
+
+    notificationPane.hidden = true;
+    notificationToggle.setAttribute("aria-expanded", "false");
+    await Promise.all([loadNotifications(), openDetail(policy)]);
   });
 
   detailFiles.addEventListener("click", async (event) => {
